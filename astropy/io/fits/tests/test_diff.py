@@ -97,7 +97,7 @@ class TestDiff(FitsTestCase):
         assert (diff.diff_duplicate_keywords ==
                 {'A': (3, 1), 'B': (1, 2), 'C': (1, 2)})
 
-    def test_floating_point_tolerance(self):
+    def test_floating_point_reltol(self):
         ha = Header([('A', 1), ('B', 2.00001), ('C', 3.000001)])
         hb = ha.copy()
         hb['B'] = 2.00002
@@ -106,9 +106,37 @@ class TestDiff(FitsTestCase):
         assert not diff.identical
         assert (diff.diff_keyword_values ==
                 {'B': [(2.00001, 2.00002)], 'C': [(3.000001, 3.000002)]})
-        diff = HeaderDiff(ha, hb, tolerance=1e-6)
+        diff = HeaderDiff(ha, hb, reltol=1e-6)
         assert not diff.identical
         assert diff.diff_keyword_values == {'B': [(2.00001, 2.00002)]}
+        diff = HeaderDiff(ha, hb, reltol=1e-5)
+        assert diff.identical
+
+    def test_floating_point_abstol(self):
+        ha = Header([('A', 1), ('B', 1.0), ('C', 0.0)])
+        hb = ha.copy()
+        hb['B'] = 1.00001
+        hb['C'] = 0.000001
+        diff = HeaderDiff(ha, hb, reltol=1e-6)
+        assert not diff.identical
+        assert (diff.diff_keyword_values ==
+                {'B': [(1.0, 1.00001)], 'C': [(0.0, 0.000001)]})
+        diff = HeaderDiff(ha, hb, reltol=1e-5)
+        assert not diff.identical
+        assert (diff.diff_keyword_values ==
+                {'C': [(0.0, 0.000001)]})
+        diff = HeaderDiff(ha, hb, abstol=1e-6)
+        assert not diff.identical
+        assert (diff.diff_keyword_values ==
+                {'B': [(1.0, 1.00001)]})
+        diff = HeaderDiff(ha, hb, abstol=1e-5)  # strict inequality
+        assert not diff.identical
+        assert (diff.diff_keyword_values ==
+                {'B': [(1.0, 1.00001)]})
+        diff = HeaderDiff(ha, hb, reltol=1e-5, abstol=1e-5)
+        assert diff.identical
+        diff = HeaderDiff(ha, hb, abstol=1.1e-5)
+        assert diff.identical
 
     def test_ignore_blanks(self):
         with fits.conf.set_temp('strip_header_whitespace', False):
@@ -205,10 +233,20 @@ class TestDiff(FitsTestCase):
         assert diff.identical
         assert diff.diff_total == 0
 
-    def test_identical_within_tolerance(self):
+    def test_identical_within_relative_tolerance(self):
         ia = np.ones((10, 10)) - 0.00001
         ib = np.ones((10, 10)) - 0.00002
-        diff = ImageDataDiff(ia, ib, tolerance=1.0e-4)
+        diff = ImageDataDiff(ia, ib, reltol=1.0e-4)
+        assert diff.identical
+        assert diff.diff_total == 0
+
+    def test_identical_within_absolute_tolerance(self):
+        ia = np.zeros((10, 10)) - 0.00001
+        ib = np.zeros((10, 10)) - 0.00002
+        diff = ImageDataDiff(ia, ib, reltol=1.0e-4)
+        assert not diff.identical
+        assert diff.diff_total == 100
+        diff = ImageDataDiff(ia, ib, abstol=1.0e-4)
         assert diff.identical
         assert diff.diff_total == 0
 
