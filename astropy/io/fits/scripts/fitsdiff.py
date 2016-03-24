@@ -99,9 +99,17 @@ def handle_options(argv=None):
              'to report per extension (default %default).')
 
     parser.add_option(
-        '-d', '--difference-tolerance', type='float', default=0.,
-        dest='tolerance', metavar='NUMBER',
+        '-rtol', '--relative-tolerance', type='float', default=0.,
+        dest='reltol', metavar='NUMBER',
         help='The relative tolerance for comparison of two numbers, '
+             'specifically two floating point numbers.  This applies to data '
+             'in both images and tables, and to floating point keyword values '
+             'in headers (default %default).')
+
+    parser.add_option(
+        '-atol', '--absolute-tolerance', type='float', default=0.,
+        dest='abstol', metavar='NUMBER',
+        help='The absolute tolerance for comparison of two numbers, '
              'specifically two floating point numbers.  This applies to data '
              'in both images and tables, and to floating point keyword values '
              'in headers (default %default).')
@@ -251,7 +259,8 @@ def main():
         opts.ignore_keywords = []
         opts.ignore_comments = []
         opts.ignore_fields = []
-        opts.tolerance = 0.0
+        opts.reltol = 0.0
+        opts.abstol = 0.0
         opts.ignore_blanks = False
         opts.ignore_blank_cards = False
 
@@ -278,7 +287,8 @@ def main():
                 ignore_comments=opts.ignore_comments,
                 ignore_fields=opts.ignore_fields,
                 numdiffs=opts.numdiffs,
-                tolerance=opts.tolerance,
+                reltol=opts.reltol,
+                abstol=opts.abstol,
                 ignore_blanks=opts.ignore_blanks,
                 ignore_blank_cards=opts.ignore_blank_cards)
             diff.report(fileobj=out_file)
