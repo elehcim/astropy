@@ -245,7 +245,7 @@ class FITSDiff(_BaseDiff):
             either in header values, image arrays, or table columns
             (default: 0.0).  Values which satisfy the expression
 
-                |x1 - x2| > abstol + |x1|*reltol
+                abs(x1 - x2) > abstol + abs(x1)*reltol
 
             are considered to be different.
 
@@ -254,7 +254,7 @@ class FITSDiff(_BaseDiff):
             either in header values, image arrays, or table columns
             (default: 0.0). Values which satisfy the expression
 
-                |x1 - x2| > abstol + |x1|*reltol
+                abs(x1 - x2) > abstol + abs(x1)*reltol
 
             are considered to be different
 
@@ -820,7 +820,7 @@ class ImageDataDiff(_BaseDiff):
             return
 
         # Find the indices where the values are not equal
-        # If neither a nor b are floating point, ignore reltol and abstol 
+        # If neither a nor b are floating point, ignore reltol and abstol
         if not ((np.issubdtype(self.a.dtype, float) or
                  np.issubdtype(self.a.dtype, complex)) or
                 (np.issubdtype(self.b.dtype, float) or
