@@ -15,6 +15,7 @@ import io
 import operator
 import os.path
 import textwrap
+import warnings
 
 from collections import defaultdict
 from functools import reduce
@@ -218,7 +219,7 @@ class FITSDiff(_BaseDiff):
 
     def __init__(self, a, b, ignore_keywords=[], ignore_comments=[],
                  ignore_fields=[], numdiffs=10, reltol=0.0, abstol=0.0,
-                 ignore_blanks=True, ignore_blank_cards=True):
+                 ignore_blanks=True, ignore_blank_cards=True, tolerance=None):
         """
         Parameters
         ----------
@@ -265,7 +266,7 @@ class FITSDiff(_BaseDiff):
 
                 abs(x1 - x2) > abstol + abs(x1)*reltol
 
-            are considered to be different
+            are considered to be different.
 
         ignore_blanks : bool, optional
             Ignore extra whitespace at the end of string values either in
@@ -275,6 +276,9 @@ class FITSDiff(_BaseDiff):
         ignore_blank_cards : bool, optional
             Ignore all cards that are blank, i.e. they only contain
             whitespace (default: True).
+
+        tolerance : float, optional
+            Alias of reltol. Deprecated, provided for backward compatibility.
         """
 
         if isinstance(a, string_types):
@@ -305,6 +309,13 @@ class FITSDiff(_BaseDiff):
         self.numdiffs = numdiffs
         self.reltol = reltol
         self.abstol = abstol
+
+        if tolerance is not None:
+            warnings.warn("Named argument `tolerance` is deprecated "
+                "and will be removed in future releases. Use `reltol` instead.")
+            if reltol == 0.0:
+                self.reltol = tolerance
+
         self.ignore_blanks = ignore_blanks
         self.ignore_blank_cards = ignore_blank_cards
 

@@ -100,7 +100,13 @@ def handle_options(argv=None):
              'to report per extension (default %default).')
 
     parser.add_option(
-        '-rtol', '--relative-tolerance', type='float', default=0.,
+        '-d', '--difference-tolerance', type='float', default=None,
+        dest='tolerance', metavar='NUMBER',
+        help='DEPRECATED. Alias for "--relative-tolerance". '
+             'Deprecated, provided for backward compatibility(default %default).')
+
+    parser.add_option(
+        '-r', '--rtol', '--relative-tolerance', type='float', default=0.,
         dest='reltol', metavar='NUMBER',
         help='The relative tolerance for comparison of two numbers, '
              'specifically two floating point numbers.  This applies to data '
@@ -108,7 +114,7 @@ def handle_options(argv=None):
              'in headers (default %default).')
 
     parser.add_option(
-        '-atol', '--absolute-tolerance', type='float', default=0.,
+        '-a', '--atol', '--absolute-tolerance', type='float', default=0.,
         dest='abstol', metavar='NUMBER',
         help='The absolute tolerance for comparison of two numbers, '
              'specifically two floating point numbers.  This applies to data '
@@ -291,7 +297,8 @@ def main():
                 reltol=opts.reltol,
                 abstol=opts.abstol,
                 ignore_blanks=opts.ignore_blanks,
-                ignore_blank_cards=opts.ignore_blank_cards)
+                ignore_blank_cards=opts.ignore_blank_cards,
+                tolerance=opts.tolerance)
             diff.report(fileobj=out_file)
             identical.append(diff.identical)
 
