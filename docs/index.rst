@@ -58,6 +58,7 @@ User Documentation
    overview
    install
    getting_started
+   Example gallery <auto_examples/index>
 
 **Core data structures and transformations**
 
@@ -84,17 +85,17 @@ User Documentation
    io/ascii/index
    io/votable/index
    io/misc
+   vo/index
 
 **Astronomy computations and utilities**
 
 .. toctree::
    :maxdepth: 1
 
+   cosmology/index
    convolution/index
    visualization/index
-   cosmology/index
    stats/index
-   vo/index
 
 **Nuts and bolts of Astropy**
 

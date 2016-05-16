@@ -68,7 +68,7 @@ del intersphinx_mapping['astropy']
 
 # add any custom intersphinx for astropy
 intersphinx_mapping['pytest'] = ('http://pytest.org/latest/', None)
-intersphinx_mapping['ipython'] = ('http://ipython.readthedocs.org/en/stable/', None)
+intersphinx_mapping['ipython'] = ('http://ipython.readthedocs.io/en/stable/', None)
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -212,3 +212,18 @@ for line in open('nitpick-exceptions'):
 
 if six.PY2:
     nitpick_ignore.extend([('py:obj', six.u('bases'))])
+
+# -- Options for the Sphinx gallery -------------------------------------------
+
+extensions += ["sphinx_gallery.gen_gallery"]
+
+sphinx_gallery_conf = {
+    'filename_pattern': '^((?!skip_).)*$', # execute all examples except those that start with "skip_"
+    'examples_dirs': '..{}examples'.format(os.sep), # path to the examples scripts
+    'gallery_dirs': 'auto_examples', # path to save gallery generated examples
+    'reference_url': {
+        'astropy': None,
+        'matplotlib': 'http://matplotlib.org/',
+        'numpy': 'http://docs.scipy.org/doc/numpy/',
+    }
+}

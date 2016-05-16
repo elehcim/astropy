@@ -10,3 +10,7 @@ dependencies:
   - matplotlib
   - wcsaxes
   - scipy
+  - pillow
+  - pip:
+    - sphinx-gallery
+    - jplephem

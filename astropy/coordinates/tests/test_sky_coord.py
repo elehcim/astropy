@@ -25,9 +25,7 @@ from ...coordinates import (ICRS, FK4, FK5, Galactic, SkyCoord, Angle,
 from ...coordinates import Latitude, EarthLocation
 from ...time import Time
 from ...utils import minversion
-from ...utils.exceptions import AstropyDeprecationWarning
-from ...utils.compat import NUMPY_LT_1_7  # pylint: disable=W0611
-
+from ...utils.exceptions import AstropyDeprecationWarning, AstropyWarning
 
 RA = 1.0 * u.deg
 DEC = 2.0 * u.deg
@@ -499,7 +497,6 @@ def test_repr():
     assert repr(sc_default) == ('<SkyCoord (ICRS): (ra, dec) in deg\n'
                                 '    (0.0, 1.0)>')
 
-@pytest.mark.skipif('NUMPY_LT_1_7')
 def test_repr_altaz():
     sc2 = SkyCoord(1 * u.deg, 1 * u.deg, frame='icrs', distance=1 * u.kpc)
     loc = EarthLocation(-2309223 * u.m, -3695529 * u.m, -4641767 * u.m)
@@ -583,6 +580,14 @@ def test_position_angle():
     # because of the frame transform, it's just a *bit* more than 90 degrees
     assert cicrs.position_angle(cfk5) > 90.0 * u.deg
     assert cicrs.position_angle(cfk5) < 91.0 * u.deg
+
+
+def test_position_angle_directly():
+    """Regression check for #3800: position_angle should accept floats."""
+    from ..angle_utilities import position_angle
+    result = position_angle(10., 20., 10., 20.)
+    assert result.unit is u.radian
+    assert result.value == 0.
 
 
 def test_table_to_coord():
@@ -893,6 +898,16 @@ def test_deepcopy():
     assert c5.representation == c4.representation
 
 
+def test_no_copy():
+    c1 = SkyCoord(np.arange(10.) * u.hourangle, np.arange(20., 30.) * u.deg)
+    c2 = SkyCoord(c1, copy=False)
+    # Note: c1.ra and c2.ra will *not* share memory, as these are recalculated
+    # to be in "preferred" units.  See discussion in #4883.
+    assert np.may_share_memory(c1.data.lon, c2.data.lon)
+    c3 = SkyCoord(c1, copy=True)
+    assert not np.may_share_memory(c1.data.lon, c3.data.lon)
+
+
 def test_immutable():
     c1 = SkyCoord(1 * u.deg, 2 * u.deg)
     with pytest.raises(AttributeError):
@@ -1165,3 +1180,37 @@ def test_getitem_representation():
     sc = SkyCoord([1, 1] * u.deg, [2, 2] * u.deg)
     sc.representation = 'cartesian'
     assert sc[0].representation is CartesianRepresentation
+
+def test_spherical_offsets():
+    i00 = SkyCoord(0*u.arcmin, 0*u.arcmin, frame='icrs')
+    i01 = SkyCoord(0*u.arcmin, 1*u.arcmin, frame='icrs')
+    i10 = SkyCoord(1*u.arcmin, 0*u.arcmin, frame='icrs')
+    i11 = SkyCoord(1*u.arcmin, 1*u.arcmin, frame='icrs')
+    i22 = SkyCoord(2*u.arcmin, 2*u.arcmin, frame='icrs')
+
+    dra, ddec = i00.spherical_offsets_to(i01)
+    assert_allclose(dra, 0*u.arcmin)
+    assert_allclose(ddec, 1*u.arcmin)
+
+    dra, ddec = i00.spherical_offsets_to(i10)
+    assert_allclose(dra, 1*u.arcmin)
+    assert_allclose(ddec, 0*u.arcmin)
+
+    dra, ddec = i10.spherical_offsets_to(i01)
+    assert_allclose(dra, -1*u.arcmin)
+    assert_allclose(ddec, 1*u.arcmin)
+
+    dra, ddec = i11.spherical_offsets_to(i22)
+    assert_allclose(ddec, 1*u.arcmin)
+    assert 0*u.arcmin < dra < 1*u.arcmin
+
+    fk5 = SkyCoord(0*u.arcmin, 0*u.arcmin, frame='fk5')
+
+    with pytest.raises(ValueError):
+        # different frames should fail
+        i00.spherical_offsets_to(fk5)
+
+    i1deg = ICRS(1*u.deg, 1*u.deg)
+    dra, ddec = i00.spherical_offsets_to(i1deg)
+    assert_allclose(dra, 1*u.deg)
+    assert_allclose(ddec, 1*u.deg)

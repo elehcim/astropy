@@ -5,6 +5,7 @@
 import re
 from io import BytesIO
 from collections import OrderedDict
+import locale
 
 import numpy as np
 
@@ -32,6 +33,14 @@ except ImportError:
     HAS_PATHLIB = False
 else:
     HAS_PATHLIB = True
+
+try:
+    locale.setlocale(locale.LC_ALL, 'de_DE')
+except:
+    HAS_DE_LOCALE = False
+else:
+    HAS_DE_LOCALE = True
+
 
 @pytest.mark.parametrize('fast_reader', [True, False, 'force'])
 def test_convert_overflow(fast_reader):
@@ -863,6 +872,31 @@ def test_sextractor_units():
         assert table[colname].unit == expected_units[i]
         assert table[colname].description == expected_descrs[i]
 
+def test_sextractor_last_column_array():
+    """
+    Make sure that the SExtractor reader handles the last column correctly when it is array-like.
+    """
+    table = ascii.read('t/sextractor3.dat', Reader=ascii.SExtractor, guess=False)
+    expected_columns = ['X_IMAGE', 'Y_IMAGE', 'ALPHA_J2000', 'DELTA_J2000',
+                        'MAG_AUTO', 'MAGERR_AUTO',
+                        'MAG_APER', 'MAG_APER_1', 'MAG_APER_2', 'MAG_APER_3', 'MAG_APER_4', 'MAG_APER_5', 'MAG_APER_6',
+                        'MAGERR_APER', 'MAGERR_APER_1', 'MAGERR_APER_2', 'MAGERR_APER_3', 'MAGERR_APER_4', 'MAGERR_APER_5', 'MAGERR_APER_6']
+    expected_units = [Unit('pix'), Unit('pix'), Unit('deg'), Unit('deg'),
+                      Unit('mag'), Unit('mag'),
+                      Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag'),
+                      Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag'), Unit('mag')]
+    expected_descrs = ['Object position along x', None,
+                       'Right ascension of barycenter (J2000)',
+                       'Declination of barycenter (J2000)',
+                       'Kron-like elliptical aperture magnitude',
+                       'RMS error for AUTO magnitude',] + [
+                       'Fixed aperture magnitude vector'] * 7 + [
+                       'RMS error vector for fixed aperture mag.'] * 7
+    for i, colname in enumerate(table.colnames):
+        assert table[colname].name == expected_columns[i]
+        assert table[colname].unit == expected_units[i]
+        assert table[colname].description == expected_descrs[i]
+
 def test_list_with_newlines():
     """
     Check that lists of strings where some strings consist of just a newline
@@ -1107,3 +1141,39 @@ def test_path_object():
     assert len(data) == 2
     assert sorted(list(data.columns)) == ['test 1a', 'test2', 'test3', 'test4']
     assert data['test2'][1] == 'hat2'
+
+
+def test_column_conversion_error():
+    """
+    Test that context information (upstream exception message) from column
+    conversion error is provided.
+    """
+    ipac = """\
+| col0   |
+| double |
+ 1  2
+"""
+    with pytest.raises(ValueError) as err:
+        ascii.read(ipac, guess=False, format='ipac')
+    assert 'Column col0 failed to convert:' in str(err.value)
+
+    with pytest.raises(ValueError) as err:
+        ascii.read(['a b', '1 2'], guess=False, format='basic', converters={'a': []})
+    assert 'no converters' in str(err.value)
+
+@pytest.mark.skipif('not HAS_DE_LOCALE')
+def test_non_C_locale_with_fast_reader():
+    """Test code that forces "C" locale while calling fast reader (#4364)"""
+    current = locale.setlocale(locale.LC_ALL)
+
+    try:
+        locale.setlocale(locale.LC_ALL, str('de_DE'))
+
+        for fast_reader in (True, False, {'use_fast_converter': False}, {'use_fast_converter': True}):
+            t = ascii.read(['a b', '1.5 2'], format='basic', guess=False,
+                           fast_reader=fast_reader)
+            assert t['a'].dtype.kind == 'f1'
+    except:
+        raise
+    finally:
+        locale.setlocale(locale.LC_ALL, current)
