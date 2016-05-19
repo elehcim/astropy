@@ -68,6 +68,8 @@ New Features
 
   - New function ``convenience.table_to_hdu``. [#4778]
 
+  - Added absolute tolerance parameter when comparing FITS files using ``FITSDiff``. [#4729]
+
 - ``astropy.io.misc``
 
 - ``astropy.io.registry``
