@@ -59,6 +59,8 @@ New Features
 
 - ``astropy.io.fits``
 
+  - Added absolute tolerance parameter when comparing FITS files using ``FITSDiff``. [#4729]
+
 - ``astropy.io.misc``
 
 - ``astropy.io.registry``
